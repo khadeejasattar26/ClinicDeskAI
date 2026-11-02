@@ -1,0 +1,36 @@
+{
+  "name": "@clinicdesk/server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch --env-file=../.env src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "MOCK_LLM=true jest --runInBand",
+    "test:coverage": "MOCK_LLM=true jest --runInBand --coverage",
+    "seed": "tsx --env-file=../.env seed/index.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.78.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^8.1.0",
+    "openai": "^6.0.0",
+    "pino": "^9.14.0",
+    "resend": "^4.8.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.23",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.0",
+    "@types/supertest": "^6.0.3",
+    "jest": "^29.7.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
+    "tsx": "^4.20.6"
+  }
+}
