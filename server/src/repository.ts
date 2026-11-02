@@ -4,10 +4,16 @@ import { resolve } from 'path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from './errors';
 import type { Config } from './config';
-import type { Clinic, Conversation, Document, Message, Slot, Usage } from './domain';
+import type { Appointment, BookingInput, Lead, LeadInput, OutboxEmail, Clinic, Conversation, Document, Message, Slot, Usage } from './domain';
 import { CLINIC_ID, CLINIC_NAME, makeSlots, mockEmbedding } from './demo-data';
 
 export interface Repository {
+  availableSlot(clinicId: string, id: string): Promise<Slot>;
+  book(clinicId: string, input: BookingInput): Promise<Appointment>;
+  appointment(clinicId: string, id: string): Promise<Appointment>;
+  createLead(clinicId: string, input: LeadInput): Promise<Lead>;
+  claimEmails(token: string, appointmentId?: string): Promise<OutboxEmail[]>;
+  finishEmail(id: string, token: string, success: boolean): Promise<void>;
   clinic(id: string): Promise<Clinic>;
   conversation(clinicId: string, id?: string): Promise<Conversation>;
   acquire(id: string, clinicId: string, lease: string): Promise<void>;
@@ -28,6 +34,23 @@ export function unwrap<T>(result: { data: unknown; error: { code?: string; messa
 }
 export class SupabaseRepository implements Repository {
   constructor(public readonly db: SupabaseClient) {}
+  async availableSlot(clinicId: string, id: string) {
+    const row = unwrap<Slot | null>(await this.db.from('slots').select('*').eq('id', id).eq('clinic_id', clinicId).eq('is_booked', false).gt('starts_at', new Date().toISOString()).maybeSingle());
+    if (!row) throw new AppError(409, 'BOOKING_CONFLICT', 'That appointment is no longer available.');
+    return row;
+  }
+  async book(clinicId: string, input: BookingInput) {
+    const row = unwrap<Appointment>(await this.db.rpc('book_appointment', { p_clinic_id: clinicId, p_slot_id: input.slot_id, p_patient_name: input.patient_name, p_patient_email: input.patient_email, p_patient_phone: input.patient_phone, p_reason: input.reason }));
+    return this.appointment(clinicId, row.id);
+  }
+  async appointment(clinicId: string, id: string): Promise<Appointment> {
+    const row = unwrap<(Appointment & { slots: { starts_at: string } }) | null>(await this.db.from('appointments').select('*,slots!inner(starts_at)').eq('id', id).eq('clinic_id', clinicId).maybeSingle());
+    if (!row) throw new AppError(404, 'APPOINTMENT_NOT_FOUND', 'Appointment not found');
+    return { ...row, starts_at: row.slots.starts_at };
+  }
+  async createLead(clinicId: string, input: LeadInput) { return unwrap<Lead>(await this.db.from('leads').insert({ ...input, clinic_id: clinicId }).select('*').single()); }
+  async claimEmails(token: string, appointmentId?: string) { return unwrap<OutboxEmail[]>(await this.db.rpc('claim_emails', { p_token: token, p_appointment_id: appointmentId ?? null })); }
+  async finishEmail(id: string, token: string, success: boolean) { unwrap(await this.db.rpc('complete_email', { p_id: id, p_token: token, p_success: success })); }
   async clinic(id: string) {
     const row = unwrap<Clinic | null>(await this.db.from('clinics').select('*').eq('id', id).maybeSingle());
     if (!row) throw new AppError(404, 'CLINIC_NOT_FOUND', 'Clinic not found');
@@ -66,6 +89,9 @@ export class MemoryRepository implements Repository {
   conversationRows: Conversation[] = [];
   messageRows: Message[] = [];
   usageRows: Usage[] = [];
+  appointmentRows: Appointment[] = [];
+  leadRows: Lead[] = [];
+  emailRows: OutboxEmail[] = [];
   private locks = new Map<string, { lease: string; expires: number }>();
   constructor() {
     const folder = resolve(__dirname, '../seed/documents');
@@ -75,6 +101,43 @@ export class MemoryRepository implements Repository {
       const content = rest.join('\n').trim();
       return { id: randomUUID(), clinic_id: CLINIC_ID, title, content, embedding: mockEmbedding(`${title} `.repeat(4) + content) };
     });
+  }
+  async availableSlot(clinicId: string, id: string) {
+    const row = this.slotRows.find(s => s.id === id && s.clinic_id === clinicId && !s.is_booked && Date.parse(s.starts_at) > Date.now());
+    if (!row) throw new AppError(409, 'BOOKING_CONFLICT', 'That appointment is no longer available.');
+    return row;
+  }
+  async book(clinicId: string, input: BookingInput) {
+    const slot = this.slotRows.find(s => s.id === input.slot_id && s.clinic_id === clinicId && !s.is_booked && Date.parse(s.starts_at) > Date.now());
+    if (!slot) throw new AppError(409, 'BOOKING_CONFLICT', 'That appointment is no longer available. Please choose another time.');
+    slot.is_booked = true;
+    const row: Appointment = { ...input, id: randomUUID(), clinic_id: clinicId, starts_at: slot.starts_at, status: 'confirmed', reminder_sent_at: null, created_at: new Date().toISOString() };
+    this.appointmentRows.push(row);
+    this.emailRows.push({ id: randomUUID(), clinic_id: clinicId, appointment_id: row.id, kind: 'confirmation', sent_at: null, claimed_at: null, claim_token: null, attempts: 0 });
+    return row;
+  }
+  async appointment(clinicId: string, id: string) {
+    const row = this.appointmentRows.find(a => a.id === id && a.clinic_id === clinicId);
+    if (!row) throw new AppError(404, 'APPOINTMENT_NOT_FOUND', 'Appointment not found');
+    return row;
+  }
+  async createLead(clinicId: string, input: LeadInput) {
+    const row = { ...input, id: randomUUID(), clinic_id: clinicId, status: 'new', created_at: new Date().toISOString() };
+    this.leadRows.push(row);
+    return row;
+  }
+  async claimEmails(token: string, appointmentId?: string) {
+    const rows = this.emailRows.filter(e => !e.sent_at && (!e.claimed_at || Date.parse(e.claimed_at) < Date.now() - 300_000) && (!appointmentId || e.appointment_id === appointmentId)).slice(0, 50);
+    for (const row of rows) { row.claimed_at = new Date().toISOString(); row.claim_token = token; row.attempts++; }
+    return rows;
+  }
+  async finishEmail(id: string, token: string, success: boolean) {
+    const row = this.emailRows.find(e => e.id === id && e.claim_token === token && !e.sent_at);
+    if (!row) return;
+    row.sent_at = success ? new Date().toISOString() : null;
+    row.claimed_at = null;
+    row.claim_token = null;
+    if (success && row.kind === 'reminder') (await this.appointment(row.clinic_id, row.appointment_id)).reminder_sent_at = row.sent_at;
   }
   async clinic(id: string) {
     const row = this.clinics.find(c => c.id === id);

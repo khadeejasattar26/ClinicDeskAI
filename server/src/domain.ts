@@ -6,3 +6,7 @@ export interface Conversation { id: string; clinic_id: string; status: 'active' 
 export interface Message { id: string; conversation_id: string; role: 'user' | 'assistant'; content: string; created_at: string }
 export interface Usage { id?: string; conversation_id: string; model: string; prompt_tokens: number; completion_tokens: number; latency_ms: number; estimated_cost_usd: number; created_at?: string }
 export interface Action { type: string; data: unknown }
+export interface Appointment extends BookingInput { id: string; clinic_id: string; status: 'confirmed' | 'cancelled' | 'completed'; starts_at: string; reminder_sent_at: string | null; created_at: string }
+export interface LeadInput { name: string; contact: string; message: string }
+export interface Lead extends LeadInput { id: string; clinic_id: string; status: string; created_at: string }
+export interface OutboxEmail { id: string; clinic_id: string; appointment_id: string; kind: 'confirmation' | 'reminder'; sent_at: string | null; claimed_at: string | null; claim_token: string | null; attempts: number }

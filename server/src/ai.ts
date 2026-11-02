@@ -38,10 +38,24 @@ export class MockAIProvider implements AIProvider {
     const text = messages.filter(m => m.role === 'user').at(-1)?.content as string ?? '';
     if (last.role === 'tool') {
       const result = JSON.parse(String(last.content));
+      if (result.confirmation_required) return reply('Please review the complete appointment details below, then select Confirm booking. Nothing is booked yet.');
+      if (result.appointment) return reply(`Your appointment is booked. ${result.appointment.email_status === 'sent' ? 'A confirmation email has been sent.' : result.appointment.email_status === 'preview' ? 'Email is in preview mode for this demo.' : 'Your confirmation email is queued for delivery.'}`);
+      if (result.lead_created) return reply('Your enquiry has been saved for reception. The team will follow up using the contact details you provided.');
+      if (result.handoff) return reply('I have flagged this conversation for reception. For a callback, please leave your name and contact details. This is not a live chat with staff.');
       if (result.documents) return reply(result.documents.length ? `${result.documents[0].content}\n\nSource: ${result.documents[0].title}` : "I don't have that information in the clinic documents. I can capture your enquiry or connect you with reception.");
       if (result.slots) return reply(result.slots.length ? 'Here are the next available appointments. Choose a time and share your contact details. I will ask you to confirm before booking.' : 'There are no available appointments in that period. I can connect you with reception.');
       return reply('Reception can help with your request.');
     }
+    const pendingText = messages.find(m => m.role === 'system' && String(m.content).startsWith('Booking state: '))?.content;
+    const pending = pendingText ? JSON.parse(String(pendingText).slice('Booking state: '.length)) : null;
+    if (/^(confirm( booking)?|yes,? confirm( booking)?)[.!]?$/i.test(text.trim())) return pending ? call('book_appointment', pending) : reply('There is no pending booking. Start by choosing an appointment time.');
+    if (text.startsWith('Booking details: ')) {
+      try { return call('book_appointment', JSON.parse(text.slice('Booking details: '.length))); } catch { return reply('Please enter your details using the booking form.'); }
+    }
+    if (text.startsWith('Lead details: ')) {
+      try { return call('create_lead', JSON.parse(text.slice('Lead details: '.length))); } catch { return reply('Please enter your name and contact details in the enquiry form.'); }
+    }
+    if (/\b(human|receptionist|handoff|speak to reception)\b/i.test(text)) return call('handoff_to_human', { reason: text });
     if (/\b(book|appointment|availability|slots)\b/i.test(text)) return call('get_available_slots', { date_from: new Date().toISOString(), date_to: new Date(Date.now() + 14 * 86400_000).toISOString() });
     return call('search_knowledge_base', { query: /opening|hours/i.test(text) ? 'opening hours' : /fee|price|cost/i.test(text) ? 'consultation fees' : text });
   }
