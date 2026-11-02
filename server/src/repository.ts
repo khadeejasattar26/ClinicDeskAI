@@ -12,6 +12,7 @@ export interface Repository {
   book(clinicId: string, input: BookingInput): Promise<Appointment>;
   appointment(clinicId: string, id: string): Promise<Appointment>;
   createLead(clinicId: string, input: LeadInput): Promise<Lead>;
+  enqueueReminders(): Promise<void>;
   claimEmails(token: string, appointmentId?: string): Promise<OutboxEmail[]>;
   finishEmail(id: string, token: string, success: boolean): Promise<void>;
   clinic(id: string): Promise<Clinic>;
@@ -49,6 +50,7 @@ export class SupabaseRepository implements Repository {
     return { ...row, starts_at: row.slots.starts_at };
   }
   async createLead(clinicId: string, input: LeadInput) { return unwrap<Lead>(await this.db.from('leads').insert({ ...input, clinic_id: clinicId }).select('*').single()); }
+  async enqueueReminders() { unwrap(await this.db.rpc('enqueue_reminders')); }
   async claimEmails(token: string, appointmentId?: string) { return unwrap<OutboxEmail[]>(await this.db.rpc('claim_emails', { p_token: token, p_appointment_id: appointmentId ?? null })); }
   async finishEmail(id: string, token: string, success: boolean) { unwrap(await this.db.rpc('complete_email', { p_id: id, p_token: token, p_success: success })); }
   async clinic(id: string) {
@@ -125,6 +127,14 @@ export class MemoryRepository implements Repository {
     const row = { ...input, id: randomUUID(), clinic_id: clinicId, status: 'new', created_at: new Date().toISOString() };
     this.leadRows.push(row);
     return row;
+  }
+  async enqueueReminders() {
+    const now = Date.now();
+    for (const row of this.appointmentRows) {
+      const starts = Date.parse(row.starts_at);
+      if (row.status !== 'confirmed' || row.reminder_sent_at || starts < now + 23 * 3600_000 || starts > now + 25 * 3600_000 || this.emailRows.some(e => e.appointment_id === row.id && e.kind === 'reminder')) continue;
+      this.emailRows.push({ id: randomUUID(), clinic_id: row.clinic_id, appointment_id: row.id, kind: 'reminder', claimed_at: null, claim_token: null, sent_at: null, attempts: 0 });
+    }
   }
   async claimEmails(token: string, appointmentId?: string) {
     const rows = this.emailRows.filter(e => !e.sent_at && (!e.claimed_at || Date.parse(e.claimed_at) < Date.now() - 300_000) && (!appointmentId || e.appointment_id === appointmentId)).slice(0, 50);

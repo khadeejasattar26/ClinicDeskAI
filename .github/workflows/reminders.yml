@@ -1,0 +1,25 @@
+name: Appointment reminders
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: clinicdesk-reminders
+  cancel-in-progress: false
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send reminders and retry queued confirmations
+        env:
+          API_URL: ${{ secrets.CLINICDESK_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$CRON_SECRET"
+          case "$API_URL" in https://*) ;; *) exit 1 ;; esac
+          curl --fail-with-body --silent --show-error --retry 2 --retry-all-errors --max-time 60 \
+            -X POST "${API_URL%/}/api/jobs/send-reminders" \
+            -H "x-cron-secret: $CRON_SECRET"

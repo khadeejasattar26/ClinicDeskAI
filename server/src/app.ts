@@ -1,4 +1,5 @@
 import express from 'express';
+import { createHash, timingSafeEqual } from 'crypto';
 import helmet from 'helmet';
 import cors from 'cors';
 import { rateLimit } from 'express-rate-limit';
@@ -19,6 +20,19 @@ export function createApp(config: Config = loadConfig(), services?: Services) {
     try {
       const body = chatSchema.parse(req.body);
       res.json(await getServices().agent.chat(body.clinicId, body.message, body.conversationId));
+    } catch (error) { next(error); }
+  });
+  app.post('/api/jobs/send-reminders', async (req, res, next) => {
+    try {
+      const secret = req.get('x-cron-secret') ?? '';
+      const hash = (value: string) => createHash('sha256').update(value).digest();
+      if (!timingSafeEqual(hash(secret), hash(config.CRON_SECRET))) {
+        res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid job credentials' } });
+        return;
+      }
+      const { repo, emails } = getServices();
+      await repo.enqueueReminders();
+      res.json(await emails.sendPending());
     } catch (error) { next(error); }
   });
   app.use((_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found' } }));
