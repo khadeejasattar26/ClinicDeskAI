@@ -1,6 +1,6 @@
 import { PGlite } from '@electric-sql/pglite';
 import { vector } from '@electric-sql/pglite/vector';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { resolve } from 'path';
 import { CLINIC_ID, makeSlots, mockEmbedding } from '../src/demo-data';
 
@@ -15,7 +15,8 @@ beforeAll(async () => {
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
     grant usage on schema auth to authenticated, service_role;
     grant execute on function auth.uid() to authenticated, service_role;`);
-  await db.exec(readFileSync(resolve(__dirname, '../../supabase/migrations/202611020001_clinicdesk.sql'), 'utf8'));
+  const migrations = resolve(__dirname, '../../supabase/migrations');
+  for (const file of readdirSync(migrations).filter(f => f.endsWith('.sql')).sort()) await db.exec(readFileSync(resolve(migrations, file), 'utf8'));
   await db.query('insert into clinics(id,name) values ($1,$2),($3,$4)', [CLINIC_ID, 'CareWell', OTHER, 'Other Clinic']);
   await db.query('insert into auth.users values ($1)', [USER]);
   await db.query('insert into staff_profiles values ($1,$2)', [USER, CLINIC_ID]);
@@ -82,4 +83,17 @@ test('seed creates normalized deterministic vectors and future half-hour slots',
   expect(mockEmbedding('hello')).toEqual(mockEmbedding('hello'));
   expect(mockEmbedding('')).toHaveLength(1536);
   expect(Math.hypot(...mockEmbedding('clinic hours'))).toBeCloseTo(1);
+});
+
+test('usage aggregates full history and excludes other clinics under service role and RLS', async () => {
+  const own = '66666666-6666-4666-8666-666666666666';
+  const other = '77777777-7777-4777-8777-777777777777';
+  await db.query('insert into conversations(id,clinic_id) values ($1,$2),($3,$4)', [own,CLINIC_ID,other,OTHER]);
+  await db.query("insert into llm_usage(conversation_id,model,prompt_tokens,completion_tokens,latency_ms,estimated_cost_usd) values ($1,'mock',100,20,200,0.01),($2,'mock',900,100,600,1)",[own,other]);
+  await db.exec('set role service_role');
+  const result = await db.query<{ value: { total_tokens: number; total_calls: number } }>('select usage_summary($1) as value',[CLINIC_ID]);
+  expect(result.rows[0].value).toMatchObject({ total_tokens:120, total_calls:1 });
+  await db.exec('reset role; set role authenticated');
+  expect((await db.query<{ value: { total_tokens: number } }>('select usage_summary($1) as value',[OTHER])).rows[0].value.total_tokens).toBe(0);
+  expect((await db.query('select * from conversations')).rows).toHaveLength(1);
 });

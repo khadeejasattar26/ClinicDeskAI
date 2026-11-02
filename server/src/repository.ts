@@ -4,10 +4,14 @@ import { resolve } from 'path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from './errors';
 import type { Config } from './config';
-import type { Appointment, BookingInput, Lead, LeadInput, OutboxEmail, Clinic, Conversation, Document, Message, Slot, Usage } from './domain';
+import type { AdminResource, UsageSummary, Appointment, BookingInput, Lead, LeadInput, OutboxEmail, Clinic, Conversation, Document, Message, Slot, Usage } from './domain';
 import { CLINIC_ID, CLINIC_NAME, makeSlots, mockEmbedding } from './demo-data';
 
 export interface Repository {
+  staffClinic(token: string): Promise<string>;
+  list(clinicId: string, resource: AdminResource, offset: number, limit: number): Promise<Record<string, unknown>[]>;
+  transcript(clinicId: string, id: string, offset: number, limit: number): Promise<{ conversation: Conversation; messages: Message[] }>;
+  usage(clinicId: string): Promise<UsageSummary>;
   availableSlot(clinicId: string, id: string): Promise<Slot>;
   book(clinicId: string, input: BookingInput): Promise<Appointment>;
   appointment(clinicId: string, id: string): Promise<Appointment>;
@@ -35,6 +39,24 @@ export function unwrap<T>(result: { data: unknown; error: { code?: string; messa
 }
 export class SupabaseRepository implements Repository {
   constructor(public readonly db: SupabaseClient) {}
+  async staffClinic(token: string) {
+    const { data, error } = await this.db.auth.getUser(token);
+    if (error || !data.user?.id) throw new AppError(401, 'UNAUTHORIZED', 'Please sign in again');
+    const profile = unwrap<{ clinic_id: string } | null>(await this.db.from('staff_profiles').select('clinic_id').eq('user_id', data.user.id).maybeSingle());
+    if (!profile) throw new AppError(403, 'FORBIDDEN', 'No clinic access is assigned to this account');
+    return profile.clinic_id;
+  }
+  async list(clinicId: string, resource: AdminResource, offset: number, limit: number) {
+    const select = resource === 'appointments' ? '*,slots!inner(starts_at)' : '*';
+    const rows = unwrap<Record<string, unknown>[]>(await this.db.from(resource).select(select).eq('clinic_id', clinicId).order('created_at', { ascending: false }).range(offset, offset + limit - 1));
+    return rows.map(row => resource === 'appointments' ? { ...row, starts_at: (row.slots as { starts_at: string }).starts_at } : row);
+  }
+  async transcript(clinicId: string, id: string, offset: number, limit: number) {
+    const conversation = await this.conversation(clinicId, id);
+    const messages = unwrap<Message[]>(await this.db.from('messages').select('*').eq('conversation_id', id).order('created_at').order('id').range(offset, offset + limit - 1));
+    return { conversation, messages };
+  }
+  async usage(clinicId: string) { return unwrap<UsageSummary>(await this.db.rpc('usage_summary', { p_clinic_id: clinicId })); }
   async availableSlot(clinicId: string, id: string) {
     const row = unwrap<Slot | null>(await this.db.from('slots').select('*').eq('id', id).eq('clinic_id', clinicId).eq('is_booked', false).gt('starts_at', new Date().toISOString()).maybeSingle());
     if (!row) throw new AppError(409, 'BOOKING_CONFLICT', 'That appointment is no longer available.');
@@ -103,6 +125,29 @@ export class MemoryRepository implements Repository {
       const content = rest.join('\n').trim();
       return { id: randomUUID(), clinic_id: CLINIC_ID, title, content, embedding: mockEmbedding(`${title} `.repeat(4) + content) };
     });
+  }
+  async staffClinic(token: string) {
+    if (token !== 'local-demo-staff') throw new AppError(401, 'UNAUTHORIZED', 'Please sign in again');
+    return CLINIC_ID;
+  }
+  async list(clinicId: string, resource: AdminResource, offset: number, limit: number) {
+    const rows = resource === 'appointments' ? this.appointmentRows : resource === 'leads' ? this.leadRows : this.conversationRows;
+    return rows.filter(row => row.clinic_id === clinicId).sort((a,b) => b.created_at.localeCompare(a.created_at)).slice(offset, offset + limit) as unknown as Record<string, unknown>[];
+  }
+  async transcript(clinicId: string, id: string, offset: number, limit: number) {
+    const conversation = await this.conversation(clinicId, id);
+    return { conversation, messages: this.messageRows.filter(m => m.conversation_id === id).slice(offset, offset + limit) };
+  }
+  async usage(clinicId: string): Promise<UsageSummary> {
+    const ids = new Set(this.conversationRows.filter(c => c.clinic_id === clinicId).map(c => c.id));
+    const rows = this.usageRows.filter(u => ids.has(u.conversation_id));
+    const daily = new Map<string, number>();
+    for (const row of rows) {
+      if (Date.parse(row.created_at!) < Date.now() - 30 * 86400_000) continue;
+      const day = new Date(Date.parse(row.created_at!) + 5 * 3600_000).toISOString().slice(0, 10);
+      daily.set(day, (daily.get(day) ?? 0) + 1);
+    }
+    return { total_tokens: rows.reduce((s,u) => s + u.prompt_tokens + u.completion_tokens, 0), total_cost_usd: rows.reduce((s,u) => s + u.estimated_cost_usd, 0), average_latency_ms: rows.length ? Math.round(rows.reduce((s,u) => s + u.latency_ms, 0) / rows.length) : 0, total_calls: rows.length, daily: [...daily].sort().map(([day,requests]) => ({ day, requests })) };
   }
   async availableSlot(clinicId: string, id: string) {
     const row = this.slotRows.find(s => s.id === id && s.clinic_id === clinicId && !s.is_booked && Date.parse(s.starts_at) > Date.now());

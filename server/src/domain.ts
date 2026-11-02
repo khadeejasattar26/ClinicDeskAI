@@ -10,3 +10,5 @@ export interface Appointment extends BookingInput { id: string; clinic_id: strin
 export interface LeadInput { name: string; contact: string; message: string }
 export interface Lead extends LeadInput { id: string; clinic_id: string; status: string; created_at: string }
 export interface OutboxEmail { id: string; clinic_id: string; appointment_id: string; kind: 'confirmation' | 'reminder'; sent_at: string | null; claimed_at: string | null; claim_token: string | null; attempts: number }
+export type AdminResource = 'appointments' | 'leads' | 'conversations';
+export interface UsageSummary { total_tokens: number; total_cost_usd: number; average_latency_ms: number; total_calls: number; daily: { day: string; requests: number }[] }
