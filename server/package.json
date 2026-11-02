@@ -7,8 +7,8 @@
     "dev": "tsx watch --env-file=../.env src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "MOCK_LLM=true jest --runInBand",
-    "test:coverage": "MOCK_LLM=true jest --runInBand --coverage",
+    "test": "MOCK_LLM=true NODE_OPTIONS=--experimental-vm-modules LOG_LEVEL=silent jest --runInBand",
+    "test:coverage": "MOCK_LLM=true NODE_OPTIONS=--experimental-vm-modules LOG_LEVEL=silent jest --runInBand --coverage",
     "seed": "tsx --env-file=../.env seed/index.ts"
   },
   "dependencies": {
@@ -23,6 +23,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.3.14",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.23",
     "@types/jest": "^29.5.14",
