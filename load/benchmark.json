@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-02",
+  "runtime": "Node.js 20.20.2",
+  "k6": "1.8.2",
+  "platform": "macOS arm64, local loopback",
+  "scenario": "0 to 50 VUs over 60 seconds; one health + one new chat request, then 1-second pause",
+  "ai_mode": "mock",
+  "storage": "in-memory demo",
+  "rate_limit_per_minute": 10000,
+  "http_requests": 2981,
+  "health_p95_ms": 1.5291,
+  "chat_p95_ms": 2.24,
+  "http_p95_ms": 2.069,
+  "application_error_rate": 0,
+  "http_failure_rate": 0,
+  "thresholds": {
+    "http_req_failed": {
+      "rate<0.01": {
+        "ok": true
+      }
+    },
+    "chat_latency": {
+      "p(95)<1500": {
+        "ok": true
+      }
+    },
+    "health_latency": {
+      "p(95)<500": {
+        "ok": true
+      }
+    },
+    "clinicdesk_errors": {
+      "rate<0.01": {
+        "ok": true
+      }
+    }
+  }
+}

@@ -1,22 +1,317 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Brand, Icon } from './Icon';
-import { ChatWidget } from './ChatWidget';
-import styles from './ClinicPage.module.css';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Brand, Icon } from "./Icon";
+import { ChatWidget } from "./ChatWidget";
+import styles from "./ClinicPage.module.css";
 export function ClinicPage() {
   const [chatOpen, setChatOpen] = useState(false);
-  return <div className={styles.page}>
-    <div className={styles.demoBar}><span>A fictional clinic. A real product demo.</span><span>BUILT WITH CLINICDESK AI <span aria-hidden="true">↗</span></span></div>
-    <header className={styles.header}><Link to="/" aria-label="CareWell home"><Brand/></Link><nav aria-label="Main navigation"><a href="#care">Our care</a><a href="#visit">Your visit</a><Link to="/admin/login">Staff portal <span aria-hidden="true">↗</span></Link></nav><button className={styles.outline} onClick={() => setChatOpen(true)}>Let’s find you a time <Icon name="arrow" size={17}/></button></header>
-    <main id="main-content">
-      <section className={styles.hero} aria-labelledby="hero-heading"><div className={styles.heroCopy}><p className={styles.eyebrow}><span/> YOUR NEIGHBOURHOOD FAMILY CLINIC</p><h1 id="hero-heading">A little care.<br/>A healthier <em>you.</em></h1><p className={styles.intro}>Good health starts with feeling heard. Thoughtful family care, a familiar face, and a little more time for what matters.</p><button className={styles.primary} onClick={() => setChatOpen(true)}>Book your visit <Icon name="arrow" size={19}/></button><a className={styles.subLink} href="#care">Get to know CareWell <span aria-hidden="true">↘</span></a><div className={styles.heroFacts}><div><Icon name="clock"/><span><strong>Mon – Sat · 9 am – 5 pm</strong><small>Here when you need us</small></span></div><div><Icon name="pin"/><span><strong>Gulberg III, Lahore</strong><small>Close to home. Close to you.</small></span></div></div></div>
-        <div className={styles.visual}><div className={styles.visualTag}>A CALMER KIND OF CARE</div><svg viewBox="0 0 480 430" className={styles.illustration} role="img" aria-label="Illustration of a welcoming clinic with plants, a sunshine-filled window and a comfortable chair"><defs><pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0v48" fill="none" stroke="#d2dbbd" strokeWidth=".7"/></pattern><clipPath id="arch"><path d="M112 290V141a107 107 0 0 1 214 0v149Z"/></clipPath></defs><path d="M0 0h480v430H0z" fill="#e6ebd5"/><path d="M0 0h480v430H0z" fill="url(#grid)"/><g clipPath="url(#arch)"><path fill="#f7f0dc" d="M112 30h214v260H112z"/><circle cx="280" cy="114" r="47" fill="#eac57a"/><path d="M80 255q120-160 290 5v100H80z" fill="#bcc6a2"/><path d="M80 281q140-120 290 7v70H80z" fill="#a1b28d"/><path d="M219 30v260M108 167h220" stroke="#fffdf3" strokeWidth="10"/></g><path d="M107 292V141a112 112 0 0 1 224 0v151" fill="none" stroke="#fffdf3" strokeWidth="9"/><path d="M0 346h480v84H0z" fill="#d6dfc5"/><path d="m0 346 480 40M0 390l480-44" stroke="#c8d2b8"/><path d="M184 343v42m112-42v42" stroke="#697c5c" strokeWidth="9" strokeLinecap="round"/><rect x="173" y="258" width="136" height="95" rx="32" fill="#d0a38b"/><rect x="165" y="308" width="152" height="48" rx="18" fill="#bd8b76"/><path d="M171 335V315m140 20v-20" stroke="#e2b8a0" strokeWidth="18" strokeLinecap="round"/><path d="M386 332V210m0 95q-47-15-42-61 43 10 42 61Zm0-40q42-9 37-47-38 6-37 47Zm0-44q-28-22-14-56 29 19 14 56Z" fill="#6d895d" stroke="#6d895d" strokeWidth="3"/><path d="M357 325h59l-9 56h-41z" fill="#edeee0"/><path d="M52 347h61v-4a30 30 0 0 0-61 0Z" fill="#8b9d71"/><path d="M69 346v34m29-34v34" stroke="#697c5c" strokeWidth="6"/><path d="M62 264h41v50H62z" fill="#f7f4e7"/><path d="M82 263v-31m0 17q-25-1-27-25 23 0 27 25Zm0-12q21-5 21-24-22 1-21 24Z" fill="#8a9c6e" stroke="#8a9c6e" strokeWidth="3"/></svg><div className={styles.quoteCard}><span className={styles.quoteIcon}><Icon name="heart" size={22}/></span><div><strong>More than an appointment.</strong><span>A moment to put yourself first.</span></div></div><div className={styles.roundSeal}>FAMILY CARE<br/><span>✳</span><br/>WITH HEART</div><div className={styles.visualFooter}><span>A welcoming space for every generation.</span><span>01 / CAREWELL</span></div></div>
-      </section>
-      <div className={styles.values}><span>Care that feels personal.</span><div><Icon name="shield" size={17}/> A thoughtful approach</div><div><Icon name="heart" size={17}/> Every generation welcome</div><div><Icon name="calendar" size={17}/> A simpler way to book</div></div>
-      <section className={styles.care} id="care"><div className={styles.sectionHeader}><div><p className={styles.eyebrow}>SMALL THINGS. BETTER HEALTH.</p><h2>Here for your <em>everyday.</em></h2></div><p>From a routine check-in to a fresh start,<br/>we make room for your wellbeing.</p></div><div className={styles.cards}>{[{ icon: 'heart' as const, label: '01 / FAMILY MEDICINE', title: 'Care for the whole family', text: 'General consultations and preventive health checks, with time to listen.' }, { icon: 'shield' as const, label: '02 / PREVENTIVE CARE', title: 'A step ahead, together', text: 'Vaccination appointments and health checks, guided by your clinician.' }, { icon: 'video' as const, label: '03 / TELEHEALTH', title: 'A little closer, wherever', text: 'Ask reception about a remote consultation that fits around your day.' }].map(card => <article key={card.title} className={styles.card}><div className={styles.cardTop}><Icon name={card.icon} size={26}/><span>{card.label}</span></div><h3>{card.title}</h3><p>{card.text}</p><button onClick={() => setChatOpen(true)}>Let’s talk <Icon name="arrow" size={16}/></button></article>)}</div></section>
-      <section className={styles.visit} id="visit"><div><p className={styles.eyebrow}>WE’LL TAKE IT FROM HERE</p><h2>Your next visit,<br/><em>one conversation away.</em></h2><p>Ask about hours, explore appointment times, or leave a note for reception. Our assistant helps with the little details.</p><button className={styles.primary} onClick={() => setChatOpen(true)}>Say hello to reception <Icon name="chat" size={18}/></button></div><div className={styles.visitSteps}><div><span>01</span><p><strong>Ask us anything about your visit</strong><small>Answers from our clinic’s own information.</small></p></div><div><span>02</span><p><strong>Find a time that works for you</strong><small>See availability, then review your details.</small></p></div><div><span>03</span><p><strong>You confirm. We’ll keep you posted.</strong><small>A confirmation and a reminder before your visit.</small></p></div></div></section>
-    </main>
-    <footer className={styles.footer}><div><Brand small/><p>A little care goes a long way.</p></div><div><strong>CareWell Family Clinic, Lahore</strong><p>Fictional portfolio demo · No real appointments or medical services.<br/>This assistant cannot give medical advice. For emergencies in Pakistan, call 1122.</p></div><span>DESIGNED AROUND YOU.<br/>POWERED BY CLINICDESK AI.</span></footer>
-    <ChatWidget open={chatOpen} onOpen={() => setChatOpen(true)} onClose={() => setChatOpen(false)}/>
-  </div>;
+  return (
+    <div className={styles.page}>
+      <div className={styles.demoBar}>
+        <span>A fictional clinic. A real product demo.</span>
+        <span>
+          BUILT WITH CLINICDESK AI <span aria-hidden="true">↗</span>
+        </span>
+      </div>
+      <header className={styles.header}>
+        <Link to="/" aria-label="CareWell home">
+          <Brand />
+        </Link>
+        <nav aria-label="Main navigation">
+          <a href="#care">Our care</a>
+          <a href="#visit">Your visit</a>
+          <Link to="/admin/login">
+            Staff portal <span aria-hidden="true">↗</span>
+          </Link>
+        </nav>
+        <button className={styles.outline} onClick={() => setChatOpen(true)}>
+          Let’s find you a time <Icon name="arrow" size={17} />
+        </button>
+      </header>
+      <main id="main-content">
+        <section className={styles.hero} aria-labelledby="hero-heading">
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>
+              <span /> YOUR NEIGHBOURHOOD FAMILY CLINIC
+            </p>
+            <h1 id="hero-heading">
+              A little care.
+              <br />A healthier <em>you.</em>
+            </h1>
+            <p className={styles.intro}>
+              Good health starts with feeling heard. Thoughtful family care, a
+              familiar face, and a little more time for what matters.
+            </p>
+            <button
+              className={styles.primary}
+              onClick={() => setChatOpen(true)}
+            >
+              Book your visit <Icon name="arrow" size={19} />
+            </button>
+            <a className={styles.subLink} href="#care">
+              Get to know CareWell <span aria-hidden="true">↘</span>
+            </a>
+            <div className={styles.heroFacts}>
+              <div>
+                <Icon name="clock" />
+                <span>
+                  <strong>Mon – Sat · 9 am – 5 pm</strong>
+                  <small>Here when you need us</small>
+                </span>
+              </div>
+              <div>
+                <Icon name="pin" />
+                <span>
+                  <strong>Gulberg III, Lahore</strong>
+                  <small>Close to home. Close to you.</small>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className={styles.visual}>
+            <div className={styles.visualTag}>A CALMER KIND OF CARE</div>
+            <svg
+              viewBox="0 0 480 430"
+              className={styles.illustration}
+              role="img"
+              aria-label="Illustration of a welcoming clinic with plants, a sunshine-filled window and a comfortable chair"
+            >
+              <defs>
+                <pattern
+                  id="grid"
+                  width="48"
+                  height="48"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <path
+                    d="M48 0H0v48"
+                    fill="none"
+                    stroke="#d2dbbd"
+                    strokeWidth=".7"
+                  />
+                </pattern>
+                <clipPath id="arch">
+                  <path d="M112 290V141a107 107 0 0 1 214 0v149Z" />
+                </clipPath>
+              </defs>
+              <path d="M0 0h480v430H0z" fill="#e6ebd5" />
+              <path d="M0 0h480v430H0z" fill="url(#grid)" />
+              <g clipPath="url(#arch)">
+                <path fill="#f7f0dc" d="M112 30h214v260H112z" />
+                <circle cx="280" cy="114" r="47" fill="#eac57a" />
+                <path d="M80 255q120-160 290 5v100H80z" fill="#bcc6a2" />
+                <path d="M80 281q140-120 290 7v70H80z" fill="#a1b28d" />
+                <path
+                  d="M219 30v260M108 167h220"
+                  stroke="#fffdf3"
+                  strokeWidth="10"
+                />
+              </g>
+              <path
+                d="M107 292V141a112 112 0 0 1 224 0v151"
+                fill="none"
+                stroke="#fffdf3"
+                strokeWidth="9"
+              />
+              <path d="M0 346h480v84H0z" fill="#d6dfc5" />
+              <path d="m0 346 480 40M0 390l480-44" stroke="#c8d2b8" />
+              <path
+                d="M184 343v42m112-42v42"
+                stroke="#697c5c"
+                strokeWidth="9"
+                strokeLinecap="round"
+              />
+              <rect
+                x="173"
+                y="258"
+                width="136"
+                height="95"
+                rx="32"
+                fill="#d0a38b"
+              />
+              <rect
+                x="165"
+                y="308"
+                width="152"
+                height="48"
+                rx="18"
+                fill="#bd8b76"
+              />
+              <path
+                d="M171 335V315m140 20v-20"
+                stroke="#e2b8a0"
+                strokeWidth="18"
+                strokeLinecap="round"
+              />
+              <path
+                d="M386 332V210m0 95q-47-15-42-61 43 10 42 61Zm0-40q42-9 37-47-38 6-37 47Zm0-44q-28-22-14-56 29 19 14 56Z"
+                fill="#6d895d"
+                stroke="#6d895d"
+                strokeWidth="3"
+              />
+              <path d="M357 325h59l-9 56h-41z" fill="#edeee0" />
+              <path d="M52 347h61v-4a30 30 0 0 0-61 0Z" fill="#8b9d71" />
+              <path d="M69 346v34m29-34v34" stroke="#697c5c" strokeWidth="6" />
+              <path d="M62 264h41v50H62z" fill="#f7f4e7" />
+              <path
+                d="M82 263v-31m0 17q-25-1-27-25 23 0 27 25Zm0-12q21-5 21-24-22 1-21 24Z"
+                fill="#8a9c6e"
+                stroke="#8a9c6e"
+                strokeWidth="3"
+              />
+            </svg>
+            <div className={styles.quoteCard}>
+              <span className={styles.quoteIcon}>
+                <Icon name="heart" size={22} />
+              </span>
+              <div>
+                <strong>More than an appointment.</strong>
+                <span>A moment to put yourself first.</span>
+              </div>
+            </div>
+            <div className={styles.roundSeal}>
+              FAMILY CARE
+              <br />
+              <span>✳</span>
+              <br />
+              WITH HEART
+            </div>
+            <div className={styles.visualFooter}>
+              <span>A welcoming space for every generation.</span>
+              <span>01 / CAREWELL</span>
+            </div>
+          </div>
+        </section>
+        <div className={styles.values}>
+          <span>Care that feels personal.</span>
+          <div>
+            <Icon name="shield" size={17} /> A thoughtful approach
+          </div>
+          <div>
+            <Icon name="heart" size={17} /> Every generation welcome
+          </div>
+          <div>
+            <Icon name="calendar" size={17} /> A simpler way to book
+          </div>
+        </div>
+        <section className={styles.care} id="care">
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className={styles.eyebrow}>SMALL THINGS. BETTER HEALTH.</p>
+              <h2>
+                Here for your <em>everyday.</em>
+              </h2>
+            </div>
+            <p>
+              From a routine check-in to a fresh start,
+              <br />
+              we make room for your wellbeing.
+            </p>
+          </div>
+          <div className={styles.cards}>
+            {[
+              {
+                icon: "heart" as const,
+                label: "01 / FAMILY MEDICINE",
+                title: "Care for the whole family",
+                text: "General consultations and preventive health checks, with time to listen.",
+              },
+              {
+                icon: "shield" as const,
+                label: "02 / PREVENTIVE CARE",
+                title: "A step ahead, together",
+                text: "Vaccination appointments and health checks, guided by your clinician.",
+              },
+              {
+                icon: "video" as const,
+                label: "03 / TELEHEALTH",
+                title: "A little closer, wherever",
+                text: "Ask reception about a remote consultation that fits around your day.",
+              },
+            ].map((card) => (
+              <article key={card.title} className={styles.card}>
+                <div className={styles.cardTop}>
+                  <Icon name={card.icon} size={26} />
+                  <span>{card.label}</span>
+                </div>
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                <button onClick={() => setChatOpen(true)}>
+                  Let’s talk <Icon name="arrow" size={16} />
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section className={styles.visit} id="visit">
+          <div>
+            <p className={styles.eyebrow}>WE’LL TAKE IT FROM HERE</p>
+            <h2>
+              Your next visit,
+              <br />
+              <em>one conversation away.</em>
+            </h2>
+            <p>
+              Ask about hours, explore appointment times, or leave a note for
+              reception. Our assistant helps with the little details.
+            </p>
+            <button
+              className={styles.primary}
+              onClick={() => setChatOpen(true)}
+            >
+              Say hello to reception <Icon name="chat" size={18} />
+            </button>
+          </div>
+          <div className={styles.visitSteps}>
+            <div>
+              <span>01</span>
+              <p>
+                <strong>Ask us anything about your visit</strong>
+                <small>Answers from our clinic’s own information.</small>
+              </p>
+            </div>
+            <div>
+              <span>02</span>
+              <p>
+                <strong>Find a time that works for you</strong>
+                <small>See availability, then review your details.</small>
+              </p>
+            </div>
+            <div>
+              <span>03</span>
+              <p>
+                <strong>You confirm. We’ll keep you posted.</strong>
+                <small>A confirmation and a reminder before your visit.</small>
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className={styles.footer}>
+        <div>
+          <Brand small />
+          <p>A little care goes a long way.</p>
+        </div>
+        <div>
+          <strong>CareWell Family Clinic, Lahore</strong>
+          <p>
+            Fictional portfolio demo · No real appointments or medical services.
+            <br />
+            This assistant cannot give medical advice. For emergencies in
+            Pakistan, call 1122.
+          </p>
+        </div>
+        <span>
+          DESIGNED AROUND YOU.
+          <br />
+          POWERED BY CLINICDESK AI.
+        </span>
+      </footer>
+      <ChatWidget
+        open={chatOpen}
+        onOpen={() => setChatOpen(true)}
+        onClose={() => setChatOpen(false)}
+      />
+    </div>
+  );
 }

@@ -10,9 +10,5 @@
     "outDir": "dist",
     "isolatedModules": true
   },
-  "include": [
-    "src",
-    "test",
-    "seed"
-  ]
+  "include": ["src", "test", "seed"]
 }

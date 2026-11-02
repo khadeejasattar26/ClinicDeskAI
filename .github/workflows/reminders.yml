@@ -1,7 +1,7 @@
 name: Appointment reminders
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: "17 * * * *"
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,2 +1,12 @@
-import pino from 'pino';
-export const logger = pino({ level: process.env.LOG_LEVEL ?? 'info', redact: ['req.headers.authorization', 'req.headers.cookie', 'patient_email', 'patient_phone', 'password', 'token'] });
+import pino from "pino";
+export const logger = pino({
+  level: process.env.LOG_LEVEL ?? "info",
+  redact: [
+    "req.headers.authorization",
+    "req.headers.cookie",
+    "patient_email",
+    "patient_phone",
+    "password",
+    "token",
+  ],
+});
