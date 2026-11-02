@@ -2,7 +2,7 @@ services:
   - type: web
     name: clinicdesk-api
     runtime: docker
-    plan: starter
+    plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     envVars:
@@ -11,7 +11,7 @@ services:
       - key: PORT
         value: '3001'
       - key: MOCK_LLM
-        value: 'true'
+        value: 'false'
       - key: DEMO_MODE
         value: 'false'
       - key: TRUST_PROXY_HOPS
@@ -33,11 +33,11 @@ services:
       - key: OPENAI_EMBEDDING_MODEL
         value: text-embedding-3-small
       - key: OPENAI_INPUT_COST_PER_MILLION
-        value: '0'
+        value: '0.15'
       - key: OPENAI_OUTPUT_COST_PER_MILLION
-        value: '0'
+        value: '0.60'
       - key: OPENAI_EMBEDDING_COST_PER_MILLION
-        value: '0'
+        value: '0.02'
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
