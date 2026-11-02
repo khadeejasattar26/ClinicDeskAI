@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { loadConfig } from '../src/config';
-import { CLINIC_ID, CLINIC_NAME, makeSlots, mockEmbedding } from './data';
+import { CLINIC_ID, CLINIC_NAME, makeSlots, mockEmbedding } from '../src/demo-data';
 
 async function seed() {
   const config = loadConfig();
@@ -24,7 +24,7 @@ async function seed() {
   for (const file of (await readdir(folder)).filter(n => n.endsWith('.md')).sort()) {
     const text = await readFile(resolve(folder, file), 'utf8');
     const [heading, ...lines] = text.split('\n');
-    const embedding = ai ? (await ai.embeddings.create({ model: config.OPENAI_EMBEDDING_MODEL, input: text, dimensions: 1536 })).data[0].embedding : mockEmbedding(text);
+    const embedding = ai ? (await ai.embeddings.create({ model: config.OPENAI_EMBEDDING_MODEL, input: text, dimensions: 1536 })).data[0].embedding : mockEmbedding(`${heading.replace(/^# /, '')} `.repeat(4) + lines.join('\n'));
     check(await db.from('documents').upsert({ clinic_id: CLINIC_ID, title: heading.replace(/^# /, ''), content: lines.join('\n').trim(), embedding }, { onConflict: 'clinic_id,title' }));
   }
   // ignoreDuplicates preserves existing slot IDs and bookings on repeated seed runs.

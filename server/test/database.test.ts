@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { vector } from '@electric-sql/pglite/vector';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { CLINIC_ID, makeSlots, mockEmbedding } from '../seed/data';
+import { CLINIC_ID, makeSlots, mockEmbedding } from '../src/demo-data';
 
 let db: PGlite;
 const OTHER = '22222222-2222-4222-8222-222222222222';
